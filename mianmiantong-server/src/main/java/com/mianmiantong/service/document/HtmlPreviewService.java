@@ -63,7 +63,11 @@ public class HtmlPreviewService {
         String tag = "p";
         if (isHeading) {
             int level = 1;
-            try { level = Integer.parseInt(style.replaceAll("[^0-9]", "")); } catch (Exception ignored) {}
+            try {
+                level = Integer.parseInt(style.replaceAll("[^0-9]", ""));
+            } catch (NumberFormatException e) {
+                log.debug("标题样式无法解析层级，回退为 h1: style={}", style);
+            }
             tag = "h" + Math.min(level, 3);
         }
 

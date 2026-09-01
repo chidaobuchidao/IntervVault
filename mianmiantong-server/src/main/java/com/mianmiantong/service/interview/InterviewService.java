@@ -313,7 +313,9 @@ public class InterviewService {
             log.warn("SSE流超时: sessionId={}", sessionId);
             try {
                 emitter.send(SseEmitter.event().name("error").data("AI响应超时，请重试"));
-            } catch (Exception ignored) {}
+            } catch (Exception sendEx) {
+                log.debug("SSE超时通知发送失败(连接已关闭): sessionId={}", sessionId, sendEx);
+            }
             emitter.complete();
         });
         emitter.onError(ex -> {
@@ -398,7 +400,9 @@ public class InterviewService {
                     log.error("代码审查AI调用失败", e);
                     try {
                         emitter.send(SseEmitter.event().name("error").data("代码审查失败"));
-                    } catch (Exception ignored) {}
+                    } catch (Exception sendEx) {
+                        log.debug("代码审查错误通知发送失败(连接已关闭): sessionId={}", sessionId, sendEx);
+                    }
                     emitter.complete();
                 }
             });
@@ -539,7 +543,9 @@ public class InterviewService {
                     }
                     emitter.send(SseEmitter.event().name("error")
                             .data("AI服务暂时不可用: " + e.getMessage()));
-                } catch (Exception ignored) {}
+                } catch (Exception sendEx) {
+                    log.debug("流式对话错误通知发送失败(连接已关闭): sessionId={}", sessionId, sendEx);
+                }
                 emitter.complete();
             }
         });
@@ -631,7 +637,9 @@ public class InterviewService {
         try {
             emitter.send(SseEmitter.event().name("error")
                     .data("{\"message\":\"" + message.replace("\"", "\\\"") + "\"}"));
-        } catch (Exception ignored) {}
+        } catch (Exception sendEx) {
+            log.debug("错误事件发送失败(连接已关闭): message={}", message, sendEx);
+        }
         emitter.complete();
         return emitter;
     }
@@ -753,7 +761,11 @@ public class InterviewService {
                 .set(InterviewSession::getCurrentQuestionIndex, session.getCurrentQuestionIndex()));
 
         emitter.onTimeout(() -> {
-            try { emitter.send(SseEmitter.event().name("error").data("出题超时")); } catch (Exception ignored) {}
+            try {
+                emitter.send(SseEmitter.event().name("error").data("出题超时"));
+            } catch (Exception sendEx) {
+                log.debug("出题超时通知发送失败(连接已关闭)", sendEx);
+            }
             emitter.complete();
         });
 
