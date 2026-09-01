@@ -63,3 +63,6 @@ docs/images/*
 !docs/images/readme-feature-showcase.png
 *.md
 mobile-preview-*.png
+
+# Local test fixtures
+test-input.pdf
