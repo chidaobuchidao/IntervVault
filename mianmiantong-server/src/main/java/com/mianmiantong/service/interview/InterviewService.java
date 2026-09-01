@@ -32,6 +32,13 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class InterviewService {
 
+    /** 代码审查轮次 SSE 超时：需等待 AI 读代码并给评价，比普通问答长 */
+    private static final long CODE_REVIEW_SSE_TIMEOUT_MS = 180_000L;
+    /** 普通问答轮次 SSE 超时 */
+    private static final long CHAT_SSE_TIMEOUT_MS = 120_000L;
+    /** 编程题出题 SSE 超时：只做题目下发，无需等模型长输出 */
+    private static final long CODING_PROBLEM_SSE_TIMEOUT_MS = 15_000L;
+
     @Value("${DEEPSEEK_API_KEY:}")
     private String systemApiKey;
 
@@ -307,7 +314,8 @@ public class InterviewService {
             contextHint = promptBuilder.buildContextHint(nextIndex);
         }
 
-        SseEmitter emitter = new SseEmitter(isCodeReview ? 180_000L : 120_000L);
+        SseEmitter emitter = new SseEmitter(
+                isCodeReview ? CODE_REVIEW_SSE_TIMEOUT_MS : CHAT_SSE_TIMEOUT_MS);
 
         emitter.onTimeout(() -> {
             log.warn("SSE流超时: sessionId={}", sessionId);
@@ -740,7 +748,7 @@ public class InterviewService {
     }
 
     private SseEmitter handleCodingRoundStream(InterviewSession session, String answer) {
-        SseEmitter emitter = new SseEmitter(15_000L);
+        SseEmitter emitter = new SseEmitter(CODING_PROBLEM_SSE_TIMEOUT_MS);
         String codingProblem = algorithmProblemService.generateCodingProblem(session.getPosition());
 
         log.info("\n" + "=".repeat(60) + "\n" +
