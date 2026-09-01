@@ -17,6 +17,11 @@ export interface PaperExportOptions {
   showWarn?: (msg: string) => void
 }
 
+/** Extract a human-readable message from an unknown thrown value. */
+function toMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
 export function usePaperExport(options: PaperExportOptions) {
   const { paragraphData, resultParagraphs, storedFile, downloadName, setError, showWarn } = options
 
@@ -83,8 +88,8 @@ export function usePaperExport(options: PaperExportOptions) {
         const msg = (errData?.detail || errData?.error || 'PDF 转 Word 保留导出失败') +
           '。标准导出不会保留原格式和图片，是否继续？'
         if (!confirm(msg)) { setError(''); return }
-      } catch (err: any) {
-        const msg = 'PDF 转 Word 导出失败: ' + (err.message || String(err)) +
+      } catch (err: unknown) {
+        const msg = 'PDF 转 Word 导出失败: ' + toMessage(err) +
           '。标准导出不会保留原格式和图片，是否继续？'
         if (!confirm(msg)) { setError(''); return }
       } finally {
@@ -110,8 +115,8 @@ export function usePaperExport(options: PaperExportOptions) {
         const msg = (errData?.detail || errData?.error || '格式保留导出失败') +
           '。标准导出不会保留原格式和图片，是否继续？'
         if (!confirm(msg)) { setError(''); return }
-      } catch (err: any) {
-        const msg = '导出失败: ' + (err.message || String(err)) +
+      } catch (err: unknown) {
+        const msg = '导出失败: ' + toMessage(err) +
           '。标准导出不会保留原格式和图片，是否继续？'
         if (!confirm(msg)) { setError(''); return }
       }
@@ -129,8 +134,8 @@ export function usePaperExport(options: PaperExportOptions) {
         return
       }
       setError('标准导出也失败了，请重试')
-    } catch (err: any) {
-      setError('导出失败: ' + (err.message || String(err)))
+    } catch (err: unknown) {
+      setError('导出失败: ' + toMessage(err))
     }
   }
 
