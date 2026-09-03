@@ -79,7 +79,7 @@ public class TemplateResumeService {
     public byte[] generateFromResume(Long resumeId, Long templateId,
                                       String parsedText, String jobDescription) {
         ResumeTemplate tpl = templateMapper.selectById(templateId);
-        if (tpl == null) throw new IllegalArgumentException("模板不存在");
+        if (tpl == null) throw new IllegalArgumentException("模板不存在: templateId=" + templateId);
 
         String prompt = String.format(PROMPT, parsedText, jobDescription);
         List<ChatMessage> messages = List.of(

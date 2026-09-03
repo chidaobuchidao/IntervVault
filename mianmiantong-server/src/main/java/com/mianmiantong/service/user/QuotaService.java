@@ -33,7 +33,7 @@ public class QuotaService {
         if (hasApiKey(config)) return;
 
         User user = userMapper.selectById(userId);
-        if (user == null) throw new QuotaExhaustedException("用户不存在");
+        if (user == null) throw new QuotaExhaustedException("用户不存在: userId=" + userId);
 
         refreshDailyQuota(user);
 
@@ -63,7 +63,7 @@ public class QuotaService {
         if (hasApiKey(config)) return null;
 
         User user = userMapper.selectById(userId);
-        if (user == null) throw new QuotaExhaustedException("用户不存在");
+        if (user == null) throw new QuotaExhaustedException("用户不存在: userId=" + userId);
 
         refreshDailyQuota(user);
 
