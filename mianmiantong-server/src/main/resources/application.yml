@@ -44,7 +44,7 @@ mybatis-plus:
 # JWT
 jwt:
   secret: ${JWT_SECRET:}
-  expiration: 604800000  # 7 days in ms
+  expiration: 604800000  # 7 天（毫秒），等价于 7 * 24 * 60 * 60 * 1000
 
 # AI Provider
 ai:
