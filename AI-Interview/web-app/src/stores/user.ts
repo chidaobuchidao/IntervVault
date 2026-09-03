@@ -10,6 +10,17 @@ interface UserInfo {
   needBindEmail?: boolean
 }
 
+// localStorage keys
+const STORAGE_KEYS = {
+  TOKEN: 'token',
+  USER_ID: 'userId',
+  NICKNAME: 'nickname',
+  AVATAR_URL: 'avatarUrl',
+  IS_ADMIN: 'isAdmin',
+  EMAIL: 'email',
+  NEED_BIND_EMAIL: 'needBindEmail'
+} as const
+
 export const useUserStore = defineStore('user', () => {
   const userId = ref<number>(0)
   const nickname = ref<string>('')
@@ -28,17 +39,17 @@ export const useUserStore = defineStore('user', () => {
     token.value = info.token
     email.value = info.email || ''
     needBindEmail.value = info.needBindEmail || false
-    localStorage.setItem('token', info.token)
-    localStorage.setItem('userId', String(info.userId))
-    localStorage.setItem('nickname', info.nickname)
-    localStorage.setItem('avatarUrl', info.avatarUrl || '')
-    localStorage.setItem('email', info.email || '')
-    localStorage.setItem('needBindEmail', info.needBindEmail ? '1' : '0')
+    localStorage.setItem(STORAGE_KEYS.TOKEN, info.token)
+    localStorage.setItem(STORAGE_KEYS.USER_ID, String(info.userId))
+    localStorage.setItem(STORAGE_KEYS.NICKNAME, info.nickname)
+    localStorage.setItem(STORAGE_KEYS.AVATAR_URL, info.avatarUrl || '')
+    localStorage.setItem(STORAGE_KEYS.EMAIL, info.email || '')
+    localStorage.setItem(STORAGE_KEYS.NEED_BIND_EMAIL, info.needBindEmail ? '1' : '0')
   }
 
   function setAdmin(admin: boolean) {
     isAdmin.value = admin
-    localStorage.setItem('isAdmin', admin ? '1' : '0')
+    localStorage.setItem(STORAGE_KEYS.IS_ADMIN, admin ? '1' : '0')
   }
 
   function clearUser() {
@@ -49,25 +60,25 @@ export const useUserStore = defineStore('user', () => {
     isAdmin.value = false
     email.value = ''
     needBindEmail.value = false
-    localStorage.removeItem('token')
-    localStorage.removeItem('userId')
-    localStorage.removeItem('nickname')
-    localStorage.removeItem('avatarUrl')
-    localStorage.removeItem('isAdmin')
-    localStorage.removeItem('email')
-    localStorage.removeItem('needBindEmail')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.USER_ID)
+    localStorage.removeItem(STORAGE_KEYS.NICKNAME)
+    localStorage.removeItem(STORAGE_KEYS.AVATAR_URL)
+    localStorage.removeItem(STORAGE_KEYS.IS_ADMIN)
+    localStorage.removeItem(STORAGE_KEYS.EMAIL)
+    localStorage.removeItem(STORAGE_KEYS.NEED_BIND_EMAIL)
   }
 
   function restoreToken() {
-    const saved = localStorage.getItem('token')
+    const saved = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (saved) {
       token.value = saved
-      userId.value = Number(localStorage.getItem('userId')) || 0
-      nickname.value = localStorage.getItem('nickname') || ''
-      avatarUrl.value = localStorage.getItem('avatarUrl') || ''
-      isAdmin.value = localStorage.getItem('isAdmin') === '1'
-      email.value = localStorage.getItem('email') || ''
-      needBindEmail.value = localStorage.getItem('needBindEmail') === '1'
+      userId.value = Number(localStorage.getItem(STORAGE_KEYS.USER_ID)) || 0
+      nickname.value = localStorage.getItem(STORAGE_KEYS.NICKNAME) || ''
+      avatarUrl.value = localStorage.getItem(STORAGE_KEYS.AVATAR_URL) || ''
+      isAdmin.value = localStorage.getItem(STORAGE_KEYS.IS_ADMIN) === '1'
+      email.value = localStorage.getItem(STORAGE_KEYS.EMAIL) || ''
+      needBindEmail.value = localStorage.getItem(STORAGE_KEYS.NEED_BIND_EMAIL) === '1'
     }
   }
 
