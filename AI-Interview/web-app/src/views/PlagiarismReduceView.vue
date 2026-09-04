@@ -394,7 +394,11 @@ const hasDocument = ref(false)
 const error = ref('')
 const warnToast = ref('')
 let warnTimer: ReturnType<typeof setTimeout> | null = null
-function showWarn(msg: string) { warnToast.value = msg; if (warnTimer) clearTimeout(warnTimer); warnTimer = setTimeout(() => { warnToast.value = '' }, 5000) }
+/** Toast 显示时长（毫秒） */
+const TOAST_DURATION_MS = 5000
+/** PDF 图片版成功提示自动清除时长（毫秒） */
+const PDF_IMAGE_SUCCESS_MSG_DURATION_MS = 4000
+function showWarn(msg: string) { warnToast.value = msg; if (warnTimer) clearTimeout(warnTimer); warnTimer = setTimeout(() => { warnToast.value = '' }, TOAST_DURATION_MS) }
 const storedFile = ref<File | null>(null)
 const canPreserveFormat = computed(() => isDocxFile(storedFile.value))
 const canUsePdfToWordExport = computed(() => isPdfFile(storedFile.value))
@@ -622,7 +626,7 @@ async function handleReportUpload(e: Event) {
     // 兜底提示
     if (data.fallbackUsed) {
       error.value = '报告为图片版PDF，已通过云端AI解析完成识别'
-      setTimeout(() => { if (error.value === '报告为图片版PDF，已通过云端AI解析完成识别') error.value = '' }, 4000)
+      setTimeout(() => { if (error.value === '报告为图片版PDF，已通过云端AI解析完成识别') error.value = '' }, PDF_IMAGE_SUCCESS_MSG_DURATION_MS)
     }
     // Merge report annotations
     if (reportAnnotations.value.length > 0) {
