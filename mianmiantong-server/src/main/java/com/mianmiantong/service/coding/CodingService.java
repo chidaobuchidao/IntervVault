@@ -16,6 +16,13 @@ import java.util.regex.Pattern;
 @Service
 public class CodingService {
 
+    /** Piston 代码执行超时（毫秒） */
+    private static final int PISTON_RUN_TIMEOUT_MS = 3000;
+    /** HTTP 连接超时（毫秒） */
+    private static final int HTTP_CONNECT_TIMEOUT_MS = 5000;
+    /** HTTP 读取超时（毫秒） */
+    private static final int HTTP_READ_TIMEOUT_MS = 15000;
+
     @Value("${PISTON_API_URL:http://localhost:2000}")
     private String pistonUrl;
 
@@ -29,7 +36,7 @@ public class CodingService {
             body.put("version", getPistonVersion(language));
             body.put("files", List.of(Map.of("name", resolveFileName(language, code), "content", code)));
             body.put("stdin", stdin != null && !stdin.isEmpty() ? stdin : "\n");
-            body.put("run_timeout", 3000);
+            body.put("run_timeout", PISTON_RUN_TIMEOUT_MS);
 
             String json = mapper.writeValueAsString(body);
 
@@ -38,8 +45,8 @@ public class CodingService {
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(15000);
+            conn.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+            conn.setReadTimeout(HTTP_READ_TIMEOUT_MS);
 
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(json.getBytes(StandardCharsets.UTF_8));
