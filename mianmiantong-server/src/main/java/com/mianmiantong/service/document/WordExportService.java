@@ -16,16 +16,19 @@ import java.math.BigInteger;
 @Service
 public class WordExportService {
 
+    /** Word 页边距：1 英寸 = 1440 Twips (Twentieths of a Point) */
+    private static final BigInteger PAGE_MARGIN_ONE_INCH = BigInteger.valueOf(1440);
+
     public byte[] exportMarkdown(String markdown, String title) {
         try (XWPFDocument doc = new XWPFDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             // 设置窄页边距
             CTSectPr sectPr = doc.getDocument().getBody().addNewSectPr();
             CTPageMar pageMar = sectPr.addNewPgMar();
-            pageMar.setTop(BigInteger.valueOf(1440));      // 1 inch
-            pageMar.setBottom(BigInteger.valueOf(1440));
-            pageMar.setLeft(BigInteger.valueOf(1440));
-            pageMar.setRight(BigInteger.valueOf(1440));
+            pageMar.setTop(PAGE_MARGIN_ONE_INCH);
+            pageMar.setBottom(PAGE_MARGIN_ONE_INCH);
+            pageMar.setLeft(PAGE_MARGIN_ONE_INCH);
+            pageMar.setRight(PAGE_MARGIN_ONE_INCH);
 
             String[] lines = markdown.split("\n");
             for (String line : lines) {
