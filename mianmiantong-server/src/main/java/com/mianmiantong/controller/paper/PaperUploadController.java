@@ -22,6 +22,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/paper")
 public class PaperUploadController {
 
+    /** DocMind OCR 轮询间隔（毫秒） */
+    private static final int DOCMIND_POLL_INTERVAL_MS = 2000;
+    /** DocMind OCR 最大轮询次数（2s × 15 = 30s 总超时） */
+    private static final int DOCMIND_MAX_POLL_ATTEMPTS = 15;
+
     private final TemplatePreservingExportService exportService;
     private final DocumentAiService documentAiService;
 
@@ -304,8 +309,8 @@ public class PaperUploadController {
             stream.close();
 
             // 轮询等待解析完成，最长 30 秒
-            for (int i = 0; i < 15; i++) {
-                try { Thread.sleep(2000); } catch (InterruptedException e) { break; }
+            for (int i = 0; i < DOCMIND_MAX_POLL_ATTEMPTS; i++) {
+                try { Thread.sleep(DOCMIND_POLL_INTERVAL_MS); } catch (InterruptedException e) { break; }
                 DocumentParseResult result = documentAiService.getResult(taskId);
                 if ("SUCCESS".equals(result.getStatus())) {
                     String text = result.getParsedText();
