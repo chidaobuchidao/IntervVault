@@ -136,7 +136,7 @@ MainAI/
 - JDK 17+
 - Maven 3.8+
 - MySQL 8.0+
-- Node.js 18+
+- Node.js 22.13.0+（Web 前端锁定的 PDF.js 依赖要求）
 
 ### 1. 配置环境变量
 
@@ -168,7 +168,7 @@ http://localhost:8080/doc.html
 
 ```bash
 cd AI-Interview/web-app
-npm install
+npm ci
 npm run dev
 ```
 
@@ -177,6 +177,8 @@ npm run dev
 ```text
 http://localhost:5173
 ```
+
+`npm ci` 按已提交的 `package-lock.json` 安装依赖，适合首次拉取和 CI 构建。开发服务器将 `/api` 请求代理到 `http://localhost:8080`，请先启动后端。更多命令和排查说明见 [Web 前端开发指南](AI-Interview/web-app/README.md)。
 
 ### 4. 启动小程序
 
