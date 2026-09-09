@@ -8,4 +8,6 @@ public interface AiStreamHandler {
     void onToken(String token);
 
     default void onUsage(TokenUsage usage) { }
+
+    default void onModel(String model) { }
 }

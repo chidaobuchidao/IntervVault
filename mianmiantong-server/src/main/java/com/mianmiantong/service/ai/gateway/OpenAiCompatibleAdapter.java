@@ -46,6 +46,8 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
 
     @Override
     public AiResponse chat(AiRequest request, String apiKey) {
+        TokenUsage usage = TokenUsage.UNKNOWN;
+        String model = resolveModel(request);
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -65,6 +67,8 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
 
             @SuppressWarnings("unchecked")
             Map<String, Object> respMap = objectMapper.readValue(response, Map.class);
+            usage = TokenUsage.parse(respMap.get("usage"));
+            if (respMap.get("model") instanceof String actual && !actual.isBlank()) model = actual;
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> choices = (List<Map<String, Object>>) respMap.get("choices");
@@ -73,9 +77,6 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
                 Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
                 String content = (String) message.get("content");
 
-                TokenUsage usage = TokenUsage.parse(respMap.get("usage"));
-                String model = respMap.get("model") instanceof String actual && !actual.isBlank()
-                        ? actual : resolveModel(request);
                 return new AiResponse(content, model, usage.inputTokens(), usage.outputTokens());
             }
 
@@ -83,7 +84,7 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
 
         } catch (Exception e) {
             log.error("[{}] API调用失败", config.name(), e);
-            throw new RuntimeException("AI服务调用失败: " + e.getMessage());
+            throw new AiProviderException("AI服务调用失败: " + e.getMessage(), e, usage, model);
         }
     }
 
@@ -127,9 +128,10 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
 
                         @SuppressWarnings("unchecked")
                         Map<String, Object> chunk = objectMapper.readValue(data, Map.class);
-                        if (chunk.containsKey("error")) throw new IllegalStateException("AI stream returned an error");
                         // Usage-only chunks can have an empty choices array.
                         if (chunk.get("usage") != null) handler.onUsage(TokenUsage.parse(chunk.get("usage")));
+                        if (chunk.get("model") instanceof String actual && !actual.isBlank()) handler.onModel(actual);
+                        if (chunk.containsKey("error")) throw new IllegalStateException("AI stream returned an error");
                         @SuppressWarnings("unchecked")
                         List<Map<String, Object>> choices = (List<Map<String, Object>>) chunk.get("choices");
                         if (choices == null || choices.isEmpty()) continue;

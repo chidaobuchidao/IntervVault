@@ -71,6 +71,10 @@ public class AiGateway {
             if (response.model() != null && !response.model().isBlank()) actualModel = response.model();
             status = "SUCCESS";
             return response;
+        } catch (AiProviderException e) {
+            usage = e.usage();
+            if (e.model() != null && !e.model().isBlank()) actualModel = e.model();
+            throw e;
         } finally {
             recordUsage(requestId, occurredAt, request, userId, adapter.name(), actualModel, keySource, false, status, usage);
         }
@@ -103,10 +107,15 @@ public class AiGateway {
         String requestId = UUID.randomUUID().toString();
         LocalDateTime occurredAt = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
         TokenUsage[] usage = {TokenUsage.UNKNOWN};
+        String[] actualModel = {model};
         String status = "FAILED";
         try {
             adapter.streamChat(resolvedRequest, apiKey, new AiStreamHandler() {
                 @Override public void onToken(String token) { handler.onToken(token); }
+                @Override public void onModel(String reported) {
+                    if (reported != null && !reported.isBlank()) actualModel[0] = reported;
+                    handler.onModel(reported);
+                }
                 @Override public void onUsage(TokenUsage reported) {
                     // Providers report cumulative totals, never add repeated usage events together.
                     usage[0] = new TokenUsage(
@@ -117,7 +126,7 @@ public class AiGateway {
             });
             status = "SUCCESS";
         } finally {
-            recordUsage(requestId, occurredAt, request, userId, adapter.name(), model, keySource, true, status, usage[0]);
+            recordUsage(requestId, occurredAt, request, userId, adapter.name(), actualModel[0], keySource, true, status, usage[0]);
         }
     }
 

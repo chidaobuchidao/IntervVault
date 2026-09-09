@@ -51,6 +51,7 @@ class AiGatewayUsageTest {
         var gateway = gateway();
         doAnswer(invocation -> {
             AiStreamHandler handler = invocation.getArgument(2);
+            handler.onModel("actual-model");
             handler.onUsage(new TokenUsage(8L, 2L));
             handler.onUsage(new TokenUsage(8L, 2L));
             throw new IllegalStateException("disconnected");
@@ -60,6 +61,7 @@ class AiGatewayUsageTest {
         verify(recorder, times(1)).record(captor.capture());
         assertThat(captor.getValue().inputTokens()).isEqualTo(8L);
         assertThat(captor.getValue().status()).isEqualTo("FAILED");
+        assertThat(captor.getValue().model()).isEqualTo("actual-model");
     }
 
     @Test void persistenceFailureCannotBreakSuccessfulGeneration() {
@@ -75,5 +77,16 @@ class AiGatewayUsageTest {
         assertThatThrownBy(() -> gateway.chat(request(), null)).hasMessage("quota");
         verify(adapter, never()).chat(any(), any());
         verifyNoInteractions(recorder);
+    }
+
+    @Test void failedSyncResponseRetainsProviderUsage() {
+        var gateway = gateway();
+        when(adapter.chat(any(), any())).thenThrow(new AiProviderException("invalid response", null, new TokenUsage(7L, 3L), "actual"));
+        assertThatThrownBy(() -> gateway.chat(request(), null)).isInstanceOf(AiProviderException.class);
+        var captor = ArgumentCaptor.forClass(AiUsageRecord.class);
+        verify(recorder).record(captor.capture());
+        assertThat(captor.getValue().inputTokens()).isEqualTo(7L);
+        assertThat(captor.getValue().model()).isEqualTo("actual");
+        assertThat(captor.getValue().status()).isEqualTo("FAILED");
     }
 }

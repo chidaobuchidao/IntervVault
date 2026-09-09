@@ -80,4 +80,25 @@ class UsageAdapterTest {
         assertThat(TokenUsage.parse(java.util.Map.of("prompt_tokens", "12", "completion_tokens", new java.math.BigInteger("9223372036854775808"))))
                 .isEqualTo(TokenUsage.UNKNOWN);
     }
+
+    @Test void malformedSyncResponsePreservesAlreadyReportedUsage() {
+        var adapter = adapter("{\"model\":\"actual\",\"choices\":[],\"usage\":{\"prompt_tokens\":7,\"completion_tokens\":3}}");
+        var failure = catchThrowable(() -> adapter.chat(request(), "fixture"));
+        assertThat(failure).isInstanceOf(AiProviderException.class);
+        assertThat(((AiProviderException) failure).usage()).isEqualTo(new TokenUsage(7L, 3L));
+        assertThat(((AiProviderException) failure).model()).isEqualTo("actual");
+    }
+
+    @Test void errorEventRetainsUsageAndActualModelBeforeThrowing() {
+        var adapter = adapter("data: {\"error\":{\"message\":\"failed\"},\"model\":\"actual\",\"usage\":{\"prompt_tokens\":7,\"completion_tokens\":3}}\n\n");
+        var usages = new ArrayList<TokenUsage>();
+        var models = new ArrayList<String>();
+        assertThatThrownBy(() -> adapter.streamChat(request(), "fixture", new AiStreamHandler() {
+            @Override public void onToken(String text) { }
+            @Override public void onUsage(TokenUsage usage) { usages.add(usage); }
+            @Override public void onModel(String model) { models.add(model); }
+        })).isInstanceOf(RuntimeException.class);
+        assertThat(usages).containsExactly(new TokenUsage(7L, 3L));
+        assertThat(models).containsExactly("actual");
+    }
 }
