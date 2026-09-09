@@ -2,6 +2,11 @@ package com.mianmiantong.service.ai.gateway;
 
 import com.mianmiantong.entity.user.UserAiConfig;
 import com.mianmiantong.service.user.UserAiConfigService;
+import com.mianmiantong.service.ai.usage.AiUsageRecord;
+import com.mianmiantong.service.ai.usage.AiUsageRecorder;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,15 +23,17 @@ public class AiGateway {
     private final ModelResolver modelResolver;
     private final QuotaPolicy quotaPolicy;
     private final UserAiConfigService userAiConfigService;
+    private final AiUsageRecorder usageRecorder;
 
     public AiGateway(ProviderRegistry registry, KeyResolver keyResolver,
                      ModelResolver modelResolver, QuotaPolicy quotaPolicy,
-                     UserAiConfigService userAiConfigService) {
+                     UserAiConfigService userAiConfigService, AiUsageRecorder usageRecorder) {
         this.registry = registry;
         this.keyResolver = keyResolver;
         this.modelResolver = modelResolver;
         this.quotaPolicy = quotaPolicy;
         this.userAiConfigService = userAiConfigService;
+        this.usageRecorder = usageRecorder;
     }
 
     /**
@@ -38,7 +45,7 @@ public class AiGateway {
     public AiResponse chat(AiRequest request, Long userId) {
         ProviderAdapter adapter = resolveAdapter(userId);
         String apiKey = keyResolver.resolve(userId);
-        String model = modelResolver.resolve(userId, request.model(), null);
+        String model = modelResolver.resolve(userId, request.model(), adapter.defaultModel());
 
         // 创建带有解析后模型的请求
         AiRequest resolvedRequest = new AiRequest(
@@ -52,7 +59,21 @@ public class AiGateway {
         quotaPolicy.consume(userId, request.taskType(), model);
 
         log.info("AI chat: provider={}, model={}, userId={}", adapter.name(), model, userId);
-        return adapter.chat(resolvedRequest, apiKey);
+        String keySource = keyResolver.source(userId);
+        String requestId = UUID.randomUUID().toString();
+        LocalDateTime occurredAt = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+        TokenUsage usage = TokenUsage.UNKNOWN;
+        String actualModel = model;
+        String status = "FAILED";
+        try {
+            AiResponse response = adapter.chat(resolvedRequest, apiKey);
+            usage = new TokenUsage(response.promptTokens(), response.completionTokens());
+            if (response.model() != null && !response.model().isBlank()) actualModel = response.model();
+            status = "SUCCESS";
+            return response;
+        } finally {
+            recordUsage(requestId, occurredAt, request, userId, adapter.name(), actualModel, keySource, false, status, usage);
+        }
     }
 
     /**
@@ -64,7 +85,7 @@ public class AiGateway {
     public void streamChat(AiRequest request, Long userId, AiStreamHandler handler) {
         ProviderAdapter adapter = resolveAdapter(userId);
         String apiKey = keyResolver.resolve(userId);
-        String model = modelResolver.resolve(userId, request.model(), null);
+        String model = modelResolver.resolve(userId, request.model(), adapter.defaultModel());
 
         // 创建带有解析后模型的请求
         AiRequest resolvedRequest = new AiRequest(
@@ -78,7 +99,41 @@ public class AiGateway {
         quotaPolicy.consume(userId, request.taskType(), model);
 
         log.info("AI stream: provider={}, model={}, userId={}", adapter.name(), model, userId);
-        adapter.streamChat(resolvedRequest, apiKey, handler);
+        String keySource = keyResolver.source(userId);
+        String requestId = UUID.randomUUID().toString();
+        LocalDateTime occurredAt = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+        TokenUsage[] usage = {TokenUsage.UNKNOWN};
+        String status = "FAILED";
+        try {
+            adapter.streamChat(resolvedRequest, apiKey, new AiStreamHandler() {
+                @Override public void onToken(String token) { handler.onToken(token); }
+                @Override public void onUsage(TokenUsage reported) {
+                    // Providers report cumulative totals, never add repeated usage events together.
+                    usage[0] = new TokenUsage(
+                            reported.inputTokens() != null ? reported.inputTokens() : usage[0].inputTokens(),
+                            reported.outputTokens() != null ? reported.outputTokens() : usage[0].outputTokens());
+                    handler.onUsage(reported);
+                }
+            });
+            status = "SUCCESS";
+        } finally {
+            recordUsage(requestId, occurredAt, request, userId, adapter.name(), model, keySource, true, status, usage[0]);
+        }
+    }
+
+    private void recordUsage(String requestId, LocalDateTime occurredAt, AiRequest request, Long routingUserId,
+                             String provider, String model, String keySource, boolean streaming,
+                             String status, TokenUsage usage) {
+        try {
+            usageRecorder.record(new AiUsageRecord(requestId, occurredAt,
+                    request.usageUserId() != null ? request.usageUserId() : routingUserId,
+                    provider, model == null ? "unknown" : model,
+                    request.feature() == null ? "OTHER" : request.feature(), keySource, streaming,
+                    status, usage.inputTokens(), usage.outputTokens()));
+        } catch (RuntimeException e) {
+            // Also covers transaction setup/commit failures outside the recorder method body.
+            log.warn("AI usage unavailable: requestId={}, errorType={}", requestId, e.getClass().getSimpleName());
+        }
     }
 
     private ProviderAdapter resolveAdapter(Long userId) {

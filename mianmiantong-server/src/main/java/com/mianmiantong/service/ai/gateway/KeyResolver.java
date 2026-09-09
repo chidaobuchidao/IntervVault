@@ -31,4 +31,12 @@ public class KeyResolver {
         }
         return systemApiKey;
     }
+
+    public String source(Long userId) {
+        if (userId != null) {
+            UserAiConfig config = userAiConfigService.getByUserId(userId);
+            if (config != null && config.getApiKey() != null && !config.getApiKey().isBlank()) return "PERSONAL";
+        }
+        return "SYSTEM";
+    }
 }
