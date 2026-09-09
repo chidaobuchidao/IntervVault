@@ -23,20 +23,20 @@ public class KeyResolver {
      * @return 解析后的 API Key
      */
     public String resolve(Long userId) {
+        return resolveCredentials(userId).apiKey();
+    }
+
+    public ResolvedKey resolveCredentials(Long userId) {
         if (userId != null) {
             UserAiConfig config = userAiConfigService.getByUserId(userId);
             if (config != null && config.getApiKey() != null && !config.getApiKey().isBlank()) {
-                return config.getApiKey();
+                return new ResolvedKey(config.getApiKey(), "PERSONAL");
             }
         }
-        return systemApiKey;
+        return new ResolvedKey(systemApiKey, "SYSTEM");
     }
 
-    public String source(Long userId) {
-        if (userId != null) {
-            UserAiConfig config = userAiConfigService.getByUserId(userId);
-            if (config != null && config.getApiKey() != null && !config.getApiKey().isBlank()) return "PERSONAL";
-        }
-        return "SYSTEM";
+    public record ResolvedKey(String apiKey, String source) {
+        @Override public String toString() { return "ResolvedKey[source=" + source + "]"; }
     }
 }

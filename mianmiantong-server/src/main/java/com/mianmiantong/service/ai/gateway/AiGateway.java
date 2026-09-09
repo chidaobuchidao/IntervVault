@@ -44,7 +44,8 @@ public class AiGateway {
      */
     public AiResponse chat(AiRequest request, Long userId) {
         ProviderAdapter adapter = resolveAdapter(userId);
-        String apiKey = keyResolver.resolve(userId);
+        KeyResolver.ResolvedKey credentials = keyResolver.resolveCredentials(userId);
+        String apiKey = credentials.apiKey();
         String model = modelResolver.resolve(userId, request.model(), adapter.defaultModel());
 
         // 创建带有解析后模型的请求
@@ -59,7 +60,7 @@ public class AiGateway {
         quotaPolicy.consume(userId, request.taskType(), model);
 
         log.info("AI chat: provider={}, model={}, userId={}", adapter.name(), model, userId);
-        String keySource = keyResolver.source(userId);
+        String keySource = credentials.source();
         String requestId = UUID.randomUUID().toString();
         LocalDateTime occurredAt = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
         TokenUsage usage = TokenUsage.UNKNOWN;
@@ -88,7 +89,8 @@ public class AiGateway {
      */
     public void streamChat(AiRequest request, Long userId, AiStreamHandler handler) {
         ProviderAdapter adapter = resolveAdapter(userId);
-        String apiKey = keyResolver.resolve(userId);
+        KeyResolver.ResolvedKey credentials = keyResolver.resolveCredentials(userId);
+        String apiKey = credentials.apiKey();
         String model = modelResolver.resolve(userId, request.model(), adapter.defaultModel());
 
         // 创建带有解析后模型的请求
@@ -103,7 +105,7 @@ public class AiGateway {
         quotaPolicy.consume(userId, request.taskType(), model);
 
         log.info("AI stream: provider={}, model={}, userId={}", adapter.name(), model, userId);
-        String keySource = keyResolver.source(userId);
+        String keySource = credentials.source();
         String requestId = UUID.randomUUID().toString();
         LocalDateTime occurredAt = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
         TokenUsage[] usage = {TokenUsage.UNKNOWN};

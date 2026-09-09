@@ -22,8 +22,7 @@ class AiGatewayUsageTest {
     private AiGateway gateway() {
         when(adapter.name()).thenReturn("test");
         when(adapter.defaultModel()).thenReturn("model");
-        when(keys.resolve(null)).thenReturn("fixture");
-        when(keys.source(null)).thenReturn("SYSTEM");
+        when(keys.resolveCredentials(null)).thenReturn(new KeyResolver.ResolvedKey("fixture", "SYSTEM"));
         when(models.resolve(null, "model", "model")).thenReturn("model");
         return new AiGateway(new ProviderRegistry(Map.of("test", adapter), "test"), keys, models, quota, configs, recorder);
     }
@@ -44,7 +43,7 @@ class AiGatewayUsageTest {
         assertThat(r.keySource()).isEqualTo("SYSTEM");
         assertThat(r.inputTokens()).isEqualTo(12L);
         verify(quota).consume(null, AiTaskType.FLASH, "model");
-        verify(keys).resolve(null);
+        verify(keys).resolveCredentials(null);
     }
 
     @Test void recordsFinalStreamingTotalsOnceIncludingFailure() {
