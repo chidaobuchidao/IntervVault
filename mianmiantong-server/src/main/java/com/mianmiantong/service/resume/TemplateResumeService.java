@@ -1,5 +1,7 @@
 package com.mianmiantong.service.resume;
 
+import com.mianmiantong.config.JwtAuthFilter;
+
 import com.mianmiantong.entity.resume.ResumeTemplate;
 import com.mianmiantong.mapper.resume.ResumeTemplateMapper;
 import com.mianmiantong.service.ai.gateway.AiGateway;
@@ -86,7 +88,7 @@ public class TemplateResumeService {
                 new ChatMessage("user", "请生成简历")
         );
 
-        AiRequest request = new AiRequest(prompt, messages, null, AiTaskType.FLASH);
+        AiRequest request = new AiRequest(prompt, messages, null, AiTaskType.FLASH).withUsage(JwtAuthFilter.getCurrentUserId(), "RESUME");
         AiResponse response = aiGateway.chat(request, null);
         log.info("AI模板简历生成完成: templateId={}, len={}", templateId, response.content().length());
 

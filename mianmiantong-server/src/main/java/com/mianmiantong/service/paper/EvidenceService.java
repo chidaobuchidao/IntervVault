@@ -64,7 +64,7 @@ public class EvidenceService {
                 "你是严谨的论文证据审查员，只判断文献片段是否能支撑当前论文观点，必须输出合法 JSON。",
                 messages, request.getModel(), AiTaskType.FLASH
             );
-            AiResponse aiResponse = aiGateway.chat(aiRequest, userId);
+            AiResponse aiResponse = aiGateway.chat(aiRequest.withUsage(userId, "EVIDENCE"), userId);
             response.setEvidences(mergeWithOriginal(chunks, parseEvidence(aiResponse.content())));
             return response;
         } catch (Exception e) {

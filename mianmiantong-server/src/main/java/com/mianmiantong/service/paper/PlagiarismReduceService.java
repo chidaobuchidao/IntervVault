@@ -1,5 +1,7 @@
 package com.mianmiantong.service.paper;
 
+import com.mianmiantong.config.JwtAuthFilter;
+
 import com.mianmiantong.dto.paper.PlagiarismReduceRequest;
 import com.mianmiantong.service.ai.gateway.AiGateway;
 import com.mianmiantong.service.ai.gateway.AiRequest;
@@ -312,9 +314,10 @@ public class PlagiarismReduceService {
             emitter.complete();
         });
 
+        Long usageUserId = JwtAuthFilter.getCurrentUserId();
         CompletableFuture.runAsync(() -> {
             try {
-                AiRequest aiRequest = new AiRequest(systemPrompt, messages, model, AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(systemPrompt, messages, model, AiTaskType.FLASH).withUsage(usageUserId, "PAPER_REDUCE");
                 aiGateway.streamChat(aiRequest, null, token -> {
                     safeSend(emitter, "token", token);
                 });

@@ -142,7 +142,7 @@ public class InterviewService {
                  "=".repeat(80),
                  position, userId);
 
-        AiRequest aiRequest = new AiRequest(systemPrompt, initMessages, request.getModel(), AiTaskType.FLASH);
+        AiRequest aiRequest = new AiRequest(systemPrompt, initMessages, request.getModel(), AiTaskType.FLASH).withUsage(userId, "INTERVIEW");
         AiResponse aiResponse = aiGateway.chat(aiRequest, userId);
         String firstQuestion = aiResponse.content();
 
@@ -206,7 +206,7 @@ public class InterviewService {
                  "-".repeat(40),
                  nextIndex, sessionId, answer, transcriptManager.summarizeContext(aiMessages));
 
-        AiRequest aiRequest = new AiRequest(systemPrompt, aiMessages, session.getModel(), AiTaskType.FLASH);
+        AiRequest aiRequest = new AiRequest(systemPrompt, aiMessages, session.getModel(), AiTaskType.FLASH).withUsage(userId, "INTERVIEW");
         AiResponse aiResponseObj = aiGateway.chat(aiRequest, userId);
         String aiResponse = aiResponseObj.content();
 
@@ -351,7 +351,7 @@ public class InterviewService {
             CompletableFuture.runAsync(() -> {
                 StringBuilder codingResponse = new StringBuilder();
                 try {
-                    AiRequest codingAiRequest = new AiRequest(systemPrompt, codingMessages, sessionModel, AiTaskType.FLASH);
+                    AiRequest codingAiRequest = new AiRequest(systemPrompt, codingMessages, sessionModel, AiTaskType.FLASH).withUsage(userId, "INTERVIEW");
                     aiGateway.streamChat(codingAiRequest, userId, token -> {
                         codingResponse.append(token);
                         try {
@@ -437,7 +437,7 @@ public class InterviewService {
             boolean[] codingFinished = {false};
 
             try {
-                AiRequest streamAiRequest = new AiRequest(systemPrompt, chatMessages, streamModel, AiTaskType.FLASH);
+                AiRequest streamAiRequest = new AiRequest(systemPrompt, chatMessages, streamModel, AiTaskType.FLASH).withUsage(userId, "INTERVIEW");
                 aiGateway.streamChat(streamAiRequest, userId, token -> {
                     fullResponse.append(token);
                     try {
@@ -588,7 +588,7 @@ public class InterviewService {
             new ChatMessage("user", "请对以上面试对话进行评估，输出[面试结束]+JSON。")
         );
 
-        AiRequest aiRequest = new AiRequest(systemPrompt, aiMessages, session.getModel(), AiTaskType.FLASH);
+        AiRequest aiRequest = new AiRequest(systemPrompt, aiMessages, session.getModel(), AiTaskType.FLASH).withUsage(userId, "INTERVIEW");
         AiResponse aiResponseObj = aiGateway.chat(aiRequest, userId);
         String aiResponse = aiResponseObj.content();
 
@@ -668,7 +668,7 @@ public class InterviewService {
                 List<ChatMessage> reportMessages = List.of(
                     new ChatMessage("user", "请评估以上面试对话")
                 );
-                AiRequest aiRequest = new AiRequest(systemPrompt, reportMessages, sessionModel, AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(systemPrompt, reportMessages, sessionModel, AiTaskType.FLASH).withUsage(userId, "INTERVIEW");
                 AiResponse aiResponseObj = aiGateway.chat(aiRequest, userId);
                 String aiResponse = aiResponseObj.content();
 

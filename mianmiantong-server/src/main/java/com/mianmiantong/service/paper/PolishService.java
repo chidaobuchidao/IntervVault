@@ -1,5 +1,7 @@
 package com.mianmiantong.service.paper;
 
+import com.mianmiantong.config.JwtAuthFilter;
+
 import com.mianmiantong.dto.paper.PolishRequest;
 import com.mianmiantong.service.ai.gateway.AiGateway;
 import com.mianmiantong.service.ai.gateway.AiRequest;
@@ -54,9 +56,10 @@ public class PolishService {
             emitter.complete();
         });
 
+        Long usageUserId = JwtAuthFilter.getCurrentUserId();
         CompletableFuture.runAsync(() -> {
             try {
-                AiRequest aiRequest = new AiRequest(systemPrompt, messages, req.getModel(), AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(systemPrompt, messages, req.getModel(), AiTaskType.FLASH).withUsage(usageUserId, "PAPER_POLISH");
                 aiGateway.streamChat(aiRequest, null, token -> {
                     safeSendJson(emitter, "token", token);
                 });

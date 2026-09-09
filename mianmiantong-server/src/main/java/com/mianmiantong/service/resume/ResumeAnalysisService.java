@@ -113,7 +113,7 @@ public class ResumeAnalysisService {
 
                 String prompt = String.format(QUICK_PROMPT, resume.getJobDescription(), resume.getParsedText());
                 List<ChatMessage> messages = List.of(new ChatMessage("user", "开始评估"));
-                AiRequest aiRequest = new AiRequest(prompt, messages, model, AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(prompt, messages, model, AiTaskType.FLASH).withUsage(resume.getUserId(), "RESUME");
                 AiResponse aiResponse = aiGateway.chat(aiRequest, null);
                 Map<String, Object> report = objectMapper.readValue(extractJson(aiResponse.content()), Map.class);
 
@@ -217,7 +217,7 @@ public class ResumeAnalysisService {
             try {
                 final long[] lastSaveTime = {System.currentTimeMillis()};
 
-                AiRequest aiRequest = new AiRequest(basePrompt, messages, model, AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(basePrompt, messages, model, AiTaskType.FLASH).withUsage(resume.getUserId(), "RESUME");
                 aiGateway.streamChat(aiRequest, null, token -> {
                     buf.append(token);
                     safeSend(emitter, "token", token);
@@ -283,7 +283,7 @@ public class ResumeAnalysisService {
 
         CompletableFuture.runAsync(() -> {
             try {
-                AiRequest aiRequest = new AiRequest(prompt, messages, null, AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(prompt, messages, null, AiTaskType.FLASH).withUsage(resume.getUserId(), "RESUME");
                 aiGateway.streamChat(aiRequest, null, token -> {
                     buf.append(token);
                     safeSend(emitter, "token", token);
@@ -329,7 +329,7 @@ public class ResumeAnalysisService {
                         keywords, resume.getParsedText());
 
                 List<ChatMessage> messages = List.of(new ChatMessage("user", "开始深度优化"));
-                AiRequest aiRequest = new AiRequest(prompt, messages, null, AiTaskType.FLASH);
+                AiRequest aiRequest = new AiRequest(prompt, messages, null, AiTaskType.FLASH).withUsage(resume.getUserId(), "RESUME");
                 AiResponse aiResponse = aiGateway.chat(aiRequest, null);
 
                 String jsonStr = extractJson(aiResponse.content());
