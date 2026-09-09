@@ -54,6 +54,7 @@
 | 论文降重    | AI 降重、重复表达压缩、交互式 diff 预览                     |
 | 文献知识库  | PDF/DOCX 文本提取、证据片段召回、引用支持度分类、管理员授权 |
 | 用户与配置  | 用户 API Key、自定义模型、额度统计、管理员开关与权限控制    |
+| Token 用量 | 个人与全站统计、每日输入/输出趋势、模型/功能/用户排行、用量完整度 |
 
 ## 项目架构
 
@@ -200,6 +201,18 @@ http://localhost:5173
 | `/api/paper-kb/evidence`        | POST    | 文献知识库证据判断 |
 | `/api/user/ai-config`           | GET/PUT | 用户 AI 配置       |
 | `/api/user/quota`               | GET     | 用户额度与权限     |
+| `/api/user/token-usage`         | GET     | 当前用户 Token 统计 |
+| `/api/admin/token-usage`        | GET     | 管理员全站 Token 统计 |
+
+### Token 用量统计
+
+- 个人中心点击“Token 用量”；管理员从管理后台进入“全站 Token 用量”。
+- 支持近 7、30、90 天，按上海时间统计。可以筛选模型和功能，管理员还可筛选用户 ID、系统 Key 或个人 Key。
+- 数据来自本应用发出的 AI 调用，包含同步与流式请求。历史数据从功能上线后积累，不回填过去的消耗。
+- 总量只累加供应商返回的已知 Token。缺失字段显示为未知用量，失败或中断的调用可能仍有消耗；页面显示用量覆盖率，本版不计算金额。
+- DeepSeek 默认请求流式 `usage`。其他预设供应商确认支持后，可设置 `ai.<provider>.stream-usage-enabled: true`；DeepSeek 也可设为 `false` 关闭该请求参数。自定义端点默认不附加此参数，仍会解析主动返回的用量。
+
+上线前先创建 `ai_usage_record` 表。当前默认关闭 Flyway，需手动执行一次 [V16 手动迁移](mianmiantong-server/src/main/resources/db/manual/V16__ai_usage_record_manual.sql)，再启动新版后端。已由 Flyway 执行对应版本迁移的环境无需重复执行手动 SQL。缺少该表时，统计查询无法正常使用，AI 调用仍可返回结果，但这段时间的用量无法保存。
 
 ## 部署提示
 
