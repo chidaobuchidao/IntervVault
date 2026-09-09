@@ -87,6 +87,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/token-usage',
+      name: 'token-usage',
+      component: () => import('@/views/TokenUsageView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin/token-usage',
+      name: 'admin-token-usage',
+      component: () => import('@/views/TokenUsageView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),

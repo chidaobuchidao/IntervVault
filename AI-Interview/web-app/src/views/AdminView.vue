@@ -12,6 +12,7 @@
       </div>
 
       <!-- Stats -->
+      <RouterLink class="usage-entry" to="/admin/token-usage">全站 Token 用量 <span>查看调用与模型消耗 →</span></RouterLink>
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-card__num">{{ status.totalUsers }}</span>
@@ -329,6 +330,9 @@ async function clearSessions() {
 </script>
 
 <style scoped>
+.usage-entry { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 54px; margin-bottom: 20px; padding: 14px 18px; border: 1px solid var(--border-medium); border-radius: 10px; background: var(--bg-paper); font-size: 14px; }
+.usage-entry span { font-size: 12px; color: var(--text-muted); }
+.usage-entry:focus-visible { outline: 2px solid #167d8d; outline-offset: 3px; }
 .page {
   min-height: 100vh;
   background: var(--bg-canvas);
