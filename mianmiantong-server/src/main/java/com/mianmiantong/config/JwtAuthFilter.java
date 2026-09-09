@@ -34,18 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String token = extractToken(request);
 
-        // Dev token bypass: "dev-token-{userId}" format, for local development
-        if (StringUtils.hasText(token) && token.startsWith("dev-token-")) {
-            long userId = 1;
-            int role = 1; // admin by default in dev mode
-            try {
-                userId = Long.parseLong(token.substring("dev-token-".length()));
-            } catch (NumberFormatException ignored) {
-                // use default userId=1
-            }
-            var authentication = new UsernamePasswordAuthenticationToken(userId, role, Collections.emptyList());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        } else if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
+        if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
             Long userId = jwtUtil.getUserId(token);
             int role = jwtUtil.getRole(token);
 
