@@ -25,14 +25,23 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
     private final ObjectMapper objectMapper;
 
     public OpenAiCompatibleAdapter(ProviderConfig config) {
+        this(config, new RestTemplate());
+    }
+
+    OpenAiCompatibleAdapter(ProviderConfig config, RestTemplate restTemplate) {
         this.config = config;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
         this.objectMapper = new ObjectMapper();
     }
 
     @Override
     public String name() {
         return config.name();
+    }
+
+    @Override
+    public String defaultModel() {
+        return config.defaultModel();
     }
 
     @Override
@@ -64,13 +73,10 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
                 Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
                 String content = (String) message.get("content");
 
-                // 提取 token 使用信息
-                @SuppressWarnings("unchecked")
-                Map<String, Object> usage = (Map<String, Object>) respMap.get("usage");
-                int promptTokens = usage != null ? ((Number) usage.getOrDefault("prompt_tokens", 0)).intValue() : 0;
-                int completionTokens = usage != null ? ((Number) usage.getOrDefault("completion_tokens", 0)).intValue() : 0;
-
-                return new AiResponse(content, resolveModel(request), promptTokens, completionTokens);
+                TokenUsage usage = TokenUsage.parse(respMap.get("usage"));
+                String model = respMap.get("model") instanceof String actual && !actual.isBlank()
+                        ? actual : resolveModel(request);
+                return new AiResponse(content, model, usage.inputTokens(), usage.outputTokens());
             }
 
             throw new RuntimeException(config.name() + " 返回格式异常: " + response);
@@ -94,6 +100,9 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
             body.put("model", resolveModel(request));
             body.put("messages", allMessages);
             body.put("stream", true);
+            if (config.streamUsageEnabled()) {
+                body.put("stream_options", Map.of("include_usage", true));
+            }
 
             String json = objectMapper.writeValueAsString(body);
             log.debug("[{}] stream request: {}", config.name(), json);
@@ -106,16 +115,26 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(response.getBody(), StandardCharsets.UTF_8))) {
                     String line;
+                    boolean finished = false;
                     while ((line = reader.readLine()) != null) {
-                        if (!line.startsWith("data: ")) continue;
-                        String data = line.substring(6);
-                        if ("[DONE]".equals(data)) break;
+                        if (!line.startsWith("data:")) continue;
+                        String data = line.substring(5).strip();
+                        if (data.isEmpty()) continue;
+                        if ("[DONE]".equals(data)) {
+                            finished = true;
+                            break;
+                        }
 
                         @SuppressWarnings("unchecked")
                         Map<String, Object> chunk = objectMapper.readValue(data, Map.class);
+                        if (chunk.containsKey("error")) throw new IllegalStateException("AI stream returned an error");
+                        // Usage-only chunks can have an empty choices array.
+                        if (chunk.get("usage") != null) handler.onUsage(TokenUsage.parse(chunk.get("usage")));
                         @SuppressWarnings("unchecked")
                         List<Map<String, Object>> choices = (List<Map<String, Object>>) chunk.get("choices");
                         if (choices == null || choices.isEmpty()) continue;
+
+                        if (choices.get(0).get("finish_reason") != null) finished = true;
 
                         @SuppressWarnings("unchecked")
                         Map<String, Object> delta = (Map<String, Object>) choices.get(0).get("delta");
@@ -126,6 +145,7 @@ public class OpenAiCompatibleAdapter implements ProviderAdapter {
                             handler.onToken(content);
                         }
                     }
+                    if (!finished) throw new IllegalStateException("AI stream ended before completion");
                 }
                 return null;
             });

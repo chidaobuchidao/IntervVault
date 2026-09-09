@@ -22,29 +22,33 @@ public class AiProviderConfig {
     @Bean
     public ProviderConfig deepseekProviderConfig(
             @Value("${ai.deepseek.endpoint}") String endpoint,
-            @Value("${ai.deepseek.model}") String model) {
-        return new ProviderConfig("deepseek", endpoint, model, List.of("deepseek-v4-flash", "deepseek-v4-pro"));
+            @Value("${ai.deepseek.model}") String model,
+            @Value("${ai.deepseek.stream-usage-enabled:true}") boolean streamUsageEnabled) {
+        return new ProviderConfig("deepseek", endpoint, model, List.of("deepseek-v4-flash", "deepseek-v4-pro"), streamUsageEnabled);
     }
 
     @Bean
     public ProviderConfig qwenProviderConfig(
             @Value("${ai.qwen.endpoint}") String endpoint,
-            @Value("${ai.qwen.model}") String model) {
-        return new ProviderConfig("qwen", endpoint, model, List.of("qwen-turbo", "qwen-plus"));
+            @Value("${ai.qwen.model}") String model,
+            @Value("${ai.qwen.stream-usage-enabled:false}") boolean streamUsageEnabled) {
+        return new ProviderConfig("qwen", endpoint, model, List.of("qwen-turbo", "qwen-plus"), streamUsageEnabled);
     }
 
     @Bean
     public ProviderConfig doubaoProviderConfig(
             @Value("${ai.doubao.endpoint}") String endpoint,
-            @Value("${ai.doubao.model}") String model) {
-        return new ProviderConfig("doubao", endpoint, model, List.of("doubao-lite-4k", "doubao-pro-4k", "doubao-pro-32k"));
+            @Value("${ai.doubao.model}") String model,
+            @Value("${ai.doubao.stream-usage-enabled:false}") boolean streamUsageEnabled) {
+        return new ProviderConfig("doubao", endpoint, model, List.of("doubao-lite-4k", "doubao-pro-4k", "doubao-pro-32k"), streamUsageEnabled);
     }
 
     @Bean
     public ProviderConfig zhipuProviderConfig(
             @Value("${ai.zhipu.endpoint}") String endpoint,
-            @Value("${ai.zhipu.model}") String model) {
-        return new ProviderConfig("zhipu", endpoint, model, List.of("glm-4-flash", "glm-4-plus", "glm-4-long"));
+            @Value("${ai.zhipu.model}") String model,
+            @Value("${ai.zhipu.stream-usage-enabled:false}") boolean streamUsageEnabled) {
+        return new ProviderConfig("zhipu", endpoint, model, List.of("glm-4-flash", "glm-4-plus", "glm-4-long"), streamUsageEnabled);
     }
 
     @Bean

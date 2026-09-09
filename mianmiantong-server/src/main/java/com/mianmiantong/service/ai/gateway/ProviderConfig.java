@@ -9,6 +9,10 @@ public record ProviderConfig(
     String name,
     String endpoint,
     String defaultModel,
-    List<String> supportedModels
+    List<String> supportedModels,
+    boolean streamUsageEnabled
 ) {
+    public ProviderConfig(String name, String endpoint, String defaultModel, List<String> supportedModels) {
+        this(name, endpoint, defaultModel, supportedModels, false);
+    }
 }

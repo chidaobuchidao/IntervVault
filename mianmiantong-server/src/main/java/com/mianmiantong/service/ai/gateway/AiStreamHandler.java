@@ -6,4 +6,6 @@ package com.mianmiantong.service.ai.gateway;
 @FunctionalInterface
 public interface AiStreamHandler {
     void onToken(String token);
+
+    default void onUsage(TokenUsage usage) { }
 }

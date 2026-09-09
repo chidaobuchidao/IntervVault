@@ -6,7 +6,10 @@ package com.mianmiantong.service.ai.gateway;
 public record AiResponse(
     String content,
     String model,
-    int promptTokens,
-    int completionTokens
+    Long promptTokens,
+    Long completionTokens
 ) {
+    public AiResponse(String content, String model, int promptTokens, int completionTokens) {
+        this(content, model, Long.valueOf(promptTokens), Long.valueOf(completionTokens));
+    }
 }
